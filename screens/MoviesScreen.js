@@ -3,6 +3,7 @@ import { View, FlatList, StyleSheet } from 'react-native';
 import { getMovies } from '../services/api';
 import MediaItem from '../components/MediaItem';
 import Dropdown from '../components/Dropdown';
+import Pagination from '../components/Pagination';
 
 export default function MoviesScreen(props) {
   const navigation = props.navigation;
@@ -16,6 +17,9 @@ export default function MoviesScreen(props) {
   // State: loading indicator
   const [isLoading, setIsLoading] = useState(false);
 
+  // State: current page for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Categories for the dropdown
   const categories = [
     { label: 'Now Playing', value: 'now_playing' },
@@ -26,6 +30,7 @@ export default function MoviesScreen(props) {
 
   // Fetch movies when component loads or category changes
   useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when category changes
     fetchMoviesFromAPI();
   }, [selectedCategory]);
 
@@ -50,6 +55,17 @@ export default function MoviesScreen(props) {
     );
   }
 
+  // Pagination logic: 10 items per page
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(movies.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedMovies = movies.slice(startIndex, endIndex);
+
+  function handlePageChange(pageNumber) {
+    setCurrentPage(pageNumber);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.dropdownContainer}>
@@ -62,12 +78,17 @@ export default function MoviesScreen(props) {
         />
       </View>
       <FlatList
-        data={movies}
+        data={paginatedMovies}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderMovieItem}
         refreshing={isLoading}
         onRefresh={fetchMoviesFromAPI}
         contentContainerStyle={styles.listContent}
+      />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </View>
   );

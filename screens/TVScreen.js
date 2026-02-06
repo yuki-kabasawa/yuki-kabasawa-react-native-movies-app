@@ -3,6 +3,7 @@ import { View, FlatList, StyleSheet } from 'react-native';
 import { getTVShows } from '../services/api';
 import MediaItem from '../components/MediaItem';
 import Dropdown from '../components/Dropdown';
+import Pagination from '../components/Pagination';
 
 export default function TVScreen(props) {
   const navigation = props.navigation;
@@ -16,6 +17,9 @@ export default function TVScreen(props) {
   // State: loading indicator
   const [isLoading, setIsLoading] = useState(false);
 
+  // State: current page for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Categories for the dropdown
   const categories = [
     { label: 'Airing Today', value: 'airing_today' },
@@ -26,6 +30,7 @@ export default function TVScreen(props) {
 
   // Fetch TV shows when component loads or category changes
   useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when category changes
     fetchTVShowsFromAPI();
   }, [selectedCategory]);
 
@@ -50,6 +55,17 @@ export default function TVScreen(props) {
     );
   }
 
+  // Pagination logic: 10 items per page
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(tvShows.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTVShows = tvShows.slice(startIndex, endIndex);
+
+  function handlePageChange(pageNumber) {
+    setCurrentPage(pageNumber);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.dropdownContainer}>
@@ -62,12 +78,17 @@ export default function TVScreen(props) {
         />
       </View>
       <FlatList
-        data={tvShows}
+        data={paginatedTVShows}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderTVShowItem}
         refreshing={isLoading}
         onRefresh={fetchTVShowsFromAPI}
         contentContainerStyle={styles.listContent}
+      />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </View>
   );

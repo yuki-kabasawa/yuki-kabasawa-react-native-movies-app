@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { searchMedia } from '../services/api';
 import MediaItem from '../components/MediaItem';
 import Dropdown from '../components/Dropdown';
+import Pagination from '../components/Pagination';
 
 export default function SearchScreen(props) {
   const navigation = props.navigation;
@@ -29,6 +30,9 @@ export default function SearchScreen(props) {
   // State: validation error for red borders
   const [showValidationError, setShowValidationError] = useState(false);
 
+  // State: current page for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Search types for the dropdown
   const searchTypes = [
     { label: 'Multi', value: 'multi' },
@@ -49,6 +53,7 @@ export default function SearchScreen(props) {
     setShowValidationError(false);
     setIsLoading(true);
     setHasSearched(true);
+    setCurrentPage(1); // Reset to page 1 on new search
 
     try {
       const data = await searchMedia(searchText, searchType);
@@ -93,6 +98,17 @@ export default function SearchScreen(props) {
         <Text style={styles.messageText}>No results found</Text>
       </View>
     );
+  }
+
+  // Pagination logic: 10 items per page
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(results.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedResults = results.slice(startIndex, endIndex);
+
+  function handlePageChange(pageNumber) {
+    setCurrentPage(pageNumber);
   }
 
   return (
@@ -146,14 +162,23 @@ export default function SearchScreen(props) {
           <Text style={styles.centerMessageText}>Please initiate a search</Text>
         </View>
       ) : (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderSearchResult}
-          refreshing={isLoading}
-          ListEmptyComponent={renderEmptyList}
-          contentContainerStyle={styles.listContent}
-        />
+        <>
+          <FlatList
+            data={paginatedResults}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderSearchResult}
+            refreshing={isLoading}
+            ListEmptyComponent={renderEmptyList}
+            contentContainerStyle={styles.listContent}
+          />
+          {results.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
       )}
     </View>
   );
